@@ -1,0 +1,53 @@
+micro services
+
+sample voting application: 
+
+voting app: in python that let's you choose between a cat and a dog
+
+==>>when you make a selection the vote is stored in redis
+
+redis in this case serves as a database in memory(IN MEMORY DB).
+
+this vote is then processed by the WORKER 
+WORKER: app written in .net
+
+====> the worker app takes the new vote and updates the persistent database
+which is a PostgreSQL.
+which simply has a table with number of votes in each category. "increments choice"
+
+
+Result app (nodejs): reads the count from the db and displays it to user.
+
+
+-----------------------------------------------------------------------------------
+
+
+how can we put this app stack in a single docker engine?
+
+1- use run command to start an instance of redis:
+$docker run -d --name=redis redis   
+##we added the "-d" to run this container in the background
+2- we will deploy the postgresSQL db by running:
+$docker run -d --name=db postgres:9.4
+3- app services: deploy a frontend app for voting interface
+by runnin an instance of voting app image
+$docker run -d --name=vote -p 5000:00 voting-app
+##named the instance vote, since it's a web-server it has a web UI instance,
+running on port 80. we'll publish that port to 5000 on the host system so 
+we can access it from a browser.
+4- Deploy the results web-app that shows the results to the users:
+$docker run -d --name=result -p 5001:80 result-app
+5- Deploy the worker by running an instance of the worker image:
+
+##PROBLEM it didn't work:
+because we haven't actually linked them together.
+##SOLUTION : USE LINKS:
+--> command line option which can be used to link two containers
+
+6- add link option to link the voting app to redis:
+$docker run -d --name=vote -p 5:000:80 --link redis:redis voting-app
+
+HOW TO DEPLOY THE VOTING APP IN KUBERNETES:
+
+we added each app in a pod and used services to connect them together.
+
